@@ -16,6 +16,8 @@ router.get('/plan-comptable/:accountNumber', planComptableController.getAccountD
 
 router.get('/mouvement', mouvementController.getMouvement);
 
+router.get('/topFive', mouvementController.getTopChargeAccounts);
+
 // Exemple de route
 router.get('/', (req, res) => {
     res.json({ message: 'Route test accessible !' });

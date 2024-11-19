@@ -59,3 +59,46 @@ exports.getMouvement = (req, res) => {
         });
     }
 };
+
+exports.getTopChargeAccounts = (req, res) => {
+    try {
+        const movements = getMovementsFromFile();
+
+        if (movements.length === 0) {
+            return res.status(404).json({
+                error: "Aucun mouvement trouvé."
+            });
+        }
+
+        // Regrouper les mouvements par compte et calculer le total des débits
+        const chargeAccounts = movements
+            .filter(movement => movement.account.startsWith('6') && movement.debit) // Filtrer les comptes commençant par '6' et ayant un débit
+            .reduce((acc, movement) => {
+                const account = movement.account;
+                const debit = parseFloat(movement.debit) || 0;
+
+                if (!acc[account]) {
+                    acc[account] = {
+                        account,
+                        accountLabel: movement.accountLabel,
+                        totalCost: 0
+                    };
+                }
+                acc[account].totalCost += debit;
+                return acc;
+            }, {});
+
+        // Convertir l'objet en tableau, trier par coût total décroissant
+        const sortedCharges = Object.values(chargeAccounts).sort((a, b) => b.totalCost - a.totalCost);
+
+        // Extraire uniquement le top 5
+        const topCharges = sortedCharges.slice(0, 5);
+
+        res.status(200).json(topCharges);
+    } catch (err) {
+        console.error("Erreur lors de la récupération des comptes de charges :", err.message);
+        res.status(500).json({
+            error: "Une erreur est survenue lors de la récupération des comptes de charges."
+        });
+    }
+};
